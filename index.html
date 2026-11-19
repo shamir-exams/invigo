@@ -47,6 +47,8 @@
     // כתובת עם /a/macros/<דומיין>/ דורשת התחברות ל-Google. בגישת Anyone עובדים עם הכתובת הכללית.
     function normalize(u) { return String(u || '').replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/'); }
     var BASE = normalize(APP_URL);
+    // איזה מסך האפליקציה פותחת: index.html = חדרי הבחינה, dashboard.html = לוח הבקרה של הרכזת
+    var DEFAULT_PAGE = '';
     var DEPLOY_ID = (BASE.match(/\/macros\/s\/([^\/]+)\/exec/) || [])[1] || '';
 
     var frame = document.getElementById('app');
@@ -65,6 +67,7 @@
     function startUrl() {
       // פרמטרים שהגיעו לאפליקציה (למשל ?page=dashboard לקיצור דרך של הרכזת) עוברים למערכת
       var url = new URL(BASE);
+      if (DEFAULT_PAGE) url.searchParams.set('page', DEFAULT_PAGE);
       new URLSearchParams(location.search).forEach(function (v, k) { url.searchParams.set(k, v); });
       return withShell(url.toString());
     }
