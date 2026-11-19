@@ -16,7 +16,7 @@
     :root { --green: #114b3c; --muted: #64748b; --bg: #ffffff; }
     html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
-    #unused { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: var(--bg); }
+    #app { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: var(--bg); }
     #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--bg); z-index: 2; transition: opacity 0.25s ease; padding: 24px; text-align: center; }
     #splash.gone { opacity: 0; pointer-events: none; }
     #splash img { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 6px 22px rgba(17, 75, 60, 0.18); }
@@ -34,29 +34,118 @@
     <img src="icon-512.png" alt="">
     <div class="name">PROCTCHER</div>
     <div id="spin" class="spin"></div>
-    <div id="msg" class="msg">פותח את המערכת...</div>
-    <button id="retry" type="button" class="hidden">לנסות שוב</button>
+    <div id="msg" class="msg">טוען את המערכת...</div>
+    <button id="retry" class="hidden" type="button">לנסות שוב</button>
     <div class="foot">&copy; 2026 Gali Ben Natan. All rights reserved.</div>
   </div>
-  <script>
-    // ===== כתובת ה-Web App (מסתיימת ב-exec). אם יוצרים פריסה חדשה לגמרי, מעדכנים כאן. =====
-    var APP_URL = "https://script.google.com/a/macros/shamir.school/s/AKfycbybpAzbHlx8yRmCRpJi8R-OHIM65lFcQYYKxMlgC19JvXfpjDNGKwm-9sJAiTM-o-l-/exec";
+  <iframe id="app" title="Proctcher" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
 
-    // פותחים את המערכת ישירות (לא בתוך מסגרת), כך שההתחברות ל-Google והנתונים נשמרים כרגיל.
-    // פרמטרים (למשל ?page=dashboard לקיצור הדרך של הרכזת) עוברים למערכת.
-    function go() {
-      var url = new URL(APP_URL);
-      new URLSearchParams(location.search).forEach(function (v, k) { url.searchParams.set(k, v); });
-      location.replace(url.toString());
+  <script>
+    // ===== הגדרה: כתובת ה-Web App (מסתיימת ב-exec). אם יוצרים פריסה חדשה לגמרי, מעדכנים כאן. =====
+    var APP_URL = "https://script.google.com/macros/s/AKfycbybpAzbHlx8yRmCRpJi8R-OHIM65lFcQYYKxMlgC19JvXfpjDNGKwm-9sJAiTM-o-l-/exec";
+
+    // כתובת עם /a/macros/<דומיין>/ דורשת התחברות ל-Google. בגישת Anyone עובדים עם הכתובת הכללית.
+    function normalize(u) { return String(u || '').replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/'); }
+    var BASE = normalize(APP_URL);
+    var DEPLOY_ID = (BASE.match(/\/macros\/s\/([^\/]+)\/exec/) || [])[1] || '';
+
+    var frame = document.getElementById('app');
+    var splash = document.getElementById('splash');
+    var msg = document.getElementById('msg');
+    var retry = document.getElementById('retry');
+    var spin = document.getElementById('spin');
+    var loaded = false, slowTimer = null;
+
+    function withShell(u) {
+      var url = new URL(normalize(u));
+      url.searchParams.set('shell', '1');
+      return url.toString();
     }
-    document.getElementById('retry').addEventListener('click', go);
-    setTimeout(function () {
-      document.getElementById('spin').classList.add('hidden');
-      document.getElementById('msg').textContent = 'המערכת לא נפתחה. יש לבדוק את החיבור לאינטרנט.';
-      document.getElementById('retry').classList.remove('hidden');
-    }, 12000);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
-    setTimeout(go, 350);
+
+    function startUrl() {
+      // פרמטרים שהגיעו לאפליקציה (למשל ?page=dashboard לקיצור דרך של הרכזת) עוברים למערכת
+      var url = new URL(BASE);
+      new URLSearchParams(location.search).forEach(function (v, k) { url.searchParams.set(k, v); });
+      return withShell(url.toString());
+    }
+
+    function showError(text) {
+      spin.classList.add('hidden');
+      msg.textContent = text;
+      retry.classList.remove('hidden');
+      splash.classList.remove('gone');
+    }
+
+    function load(u) {
+      loaded = false;
+      spin.classList.remove('hidden');
+      retry.classList.add('hidden');
+      msg.textContent = 'טוען את המערכת...';
+      splash.classList.remove('gone');
+      clearTimeout(slowTimer);
+      slowTimer = setTimeout(function () {
+        if (!loaded) msg.textContent = navigator.onLine === false ? 'אין חיבור לאינטרנט. המערכת תיפתח כשהחיבור יחזור.' : 'הטעינה לוקחת יותר זמן מהרגיל...';
+      }, 9000);
+      frame.src = u;
+    }
+
+    frame.addEventListener('load', function () {
+      if (!frame.src) return;
+      loaded = true;
+      clearTimeout(slowTimer);
+      splash.classList.add('gone');
+    });
+
+    retry.addEventListener('click', function () { load(startUrl()); });
+    window.addEventListener('online', function () { if (!loaded) load(startUrl()); });
+
+    // מעבר בין מסכים שהמערכת מבקשת (למשל מלוח הבקרה לחדר) — רק לכתובות של אותה מערכת
+    // ===== "זכור אותי": שמירת הנתונים המקומיים של המערכת כאן, באפליקציה =====
+    // באייפון המערכת (שרצה בתוך המסגרת) לא יכולה לשמור נתונים בין פתיחות. היא שולחת לכאן כל שינוי,
+    // ובפתיחה הבאה מקבלת בחזרה את כל מה שנשמר: הכניסה, תור השמירות והחדר הפעיל.
+    var STORE_KEY = 'proctcher_app_store_v1';
+    var APP_FRAME_ORIGIN = /^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/;
+    var store = {};
+    try { store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { store = {}; }
+    if (typeof store !== 'object' || Array.isArray(store)) store = {};
+    function persist() {
+      var json = JSON.stringify(store);
+      try { localStorage.setItem(STORE_KEY, json); return; } catch (e) {}
+      // אין מקום: מוותרים על נתוני חדרים שמורים (נטענים מחדש מהשרת) ומנסים שוב
+      Object.keys(store).forEach(function (k) { if (k.indexOf('proctcher_room_v1_') === 0 || k === 'proctcher_rooms_list_v1') delete store[k]; });
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e2) {}
+    }
+
+    window.addEventListener('message', function (e) {
+      var d = e.data;
+      if (!d || typeof d !== 'object') return;
+      // מעבר בין מסכים שהמערכת מבקשת (למשל מלוח הבקרה לחדר) — רק לכתובות של אותה מערכת
+      if (d.proctcher === 'nav' && typeof d.url === 'string') {
+        try {
+          var u = new URL(normalize(d.url));
+          if (u.hostname !== 'script.google.com' || u.pathname.indexOf('/macros/s/' + DEPLOY_ID + '/exec') !== 0) return;
+          load(withShell(u.toString()));
+        } catch (err) {}
+        return;
+      }
+      if (d.proctcherStore !== 1 || !APP_FRAME_ORIGIN.test(e.origin)) return;
+      if (d.op === 'hello') {
+        try { e.source.postMessage({ proctcherStore: 1, op: 'store', data: store }, e.origin); } catch (err) {}
+      } else if (d.op === 'set' && typeof d.key === 'string') {
+        store[d.key] = String(d.value);
+        persist();
+      } else if (d.op === 'remove' && typeof d.key === 'string') {
+        if (Object.prototype.hasOwnProperty.call(store, d.key)) { delete store[d.key]; persist(); }
+      }
+    });
+
+    if (!DEPLOY_ID) showError('כתובת המערכת לא הוגדרה. יש לעדכן את APP_URL בקובץ index.html.');
+    else if (navigator.onLine === false) showError('אין חיבור לאינטרנט. המערכת תיפתח כשהחיבור יחזור.');
+    else load(startUrl());
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
   </script>
 </body>
 </html>

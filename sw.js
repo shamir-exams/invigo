@@ -1,6 +1,6 @@
 // Proctcher App: שומר את מעטפת האפליקציה בטלפון כדי שתיפתח מהר.
 // המערכת עצמה (Google Apps Script) תמיד נטענת מהרשת ולא נשמרת כאן.
-const CACHE = 'proctcher-shell-v1';
+const CACHE = 'proctcher-shell-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './maskable-512.png', './icon-32.png'];
 
 self.addEventListener('install', e => {
