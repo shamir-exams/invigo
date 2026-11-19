@@ -27,6 +27,14 @@
     button { font: inherit; font-weight: 800; font-size: 16px; color: #ffffff; background: var(--green); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
     .hidden { display: none !important; }
     .foot { position: fixed; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; color: #94a3b8; font-size: 12px; direction: ltr; }
+    /* בקשת הפעלת התראות */
+    #pushBar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5; background: #ffffff; border: 2px solid #114b3c; border-radius: 16px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; max-width: 460px; margin: 0 auto; font-family: inherit; }
+    #pushBar .t { font-weight: 900; color: #114b3c; font-size: 16px; }
+    #pushBar .s { color: #475569; font-size: 14px; font-weight: 600; line-height: 1.5; }
+    #pushBar .row { display: flex; gap: 8px; }
+    #pushBar .row button { flex: 1; padding: 11px 10px; font-size: 15px; }
+    #pushBar .row .later { background: #f1f5f9; color: #334155; }
+    #pushToast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6; background: #114b3c; color: #ffffff; font-weight: 800; font-size: 14px; border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); max-width: 90%; text-align: center; }
   </style>
 </head>
 <body>
@@ -39,6 +47,12 @@
     <div class="foot">&copy; 2026 Gali Ben Natan. All rights reserved.</div>
   </div>
   <iframe id="app" title="Proctcher" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <div id="pushBar" class="hidden" role="dialog" aria-label="הפעלת התראות">
+    <div class="t">🔔 התראות מהרכזת</div>
+    <div class="s">כדי שהודעות חשובות מהרכזת יופיעו אצלך גם כשהטלפון נעול.</div>
+    <div class="row"><button type="button" id="pushOn">הפעלת התראות</button><button type="button" class="later" id="pushLater">לא עכשיו</button></div>
+  </div>
+  <div id="pushToast" class="hidden"></div>
 
   <script>
     // ===== הגדרה: כתובת ה-Web App (מסתיימת ב-exec). אם יוצרים פריסה חדשה לגמרי, מעדכנים כאן. =====
@@ -134,13 +148,84 @@
       if (d.proctcherStore !== 1 || !APP_FRAME_ORIGIN.test(e.origin)) return;
       if (d.op === 'hello') {
         try { e.source.postMessage({ proctcherStore: 1, op: 'store', data: store }, e.origin); } catch (err) {}
+        appWin = e.source; appOrigin = e.origin;
+        if (pendingToken) sendTokenToApp(pendingToken, true);
+        setTimeout(maybeOfferPush, 1500);
+      } else if (d.op === 'pushRegistered') {
+        if (d.ok && d.token) { lsSet(PUSH_SENT_KEY, JSON.stringify({ t: d.token, ts: Date.now() })); if (pendingToken === d.token) pendingToken = null; }
       } else if (d.op === 'set' && typeof d.key === 'string') {
         store[d.key] = String(d.value);
         persist();
+        if (d.key === 'proctcher_auth_token') setTimeout(maybeOfferPush, 1500); // אחרי התחברות
       } else if (d.op === 'remove' && typeof d.key === 'string') {
         if (Object.prototype.hasOwnProperty.call(store, d.key)) { delete store[d.key]; persist(); }
       }
     });
+
+
+    // ===== התראות למסך הנעילה (Firebase Cloud Messaging) =====
+    var FIREBASE_CONFIG = {"apiKey":"AIzaSyDSnUM9hA8ezdxBtMTSC7LMewKG4bgT44w","authDomain":"proctcher-push.firebaseapp.com","projectId":"proctcher-push","storageBucket":"proctcher-push.firebasestorage.app","messagingSenderId":"617246029347","appId":"1:617246029347:web:697d18d2edec8c62002396"};
+    var VAPID_KEY = "BCb37ceuqXDXkZflj_5jgKE7uxeGQGv_NQU1recbpKA9_Hqp9e1Y-S9-xPGh2LpGf7tUbpW18p1AEThMYEGc6u0";
+    var FB_VER = "10.12.2";
+    var PUSH_SENT_KEY = 'proctcher_push_sent_v1', PUSH_LATER_KEY = 'proctcher_push_later_v1';
+    var appWin = null, appOrigin = '', pendingToken = null, pushStarted = false;
+
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function pushSupported() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+    function loggedIn() { return !!store.proctcher_auth_token; }
+    function platformName() { var u = navigator.userAgent || ''; return /iPhone|iPad|iPod/.test(u) ? 'ios' : (/Android/.test(u) ? 'android' : 'web'); }
+    function toast(t) {
+      var el = document.getElementById('pushToast');
+      el.textContent = t; el.classList.remove('hidden');
+      clearTimeout(toast._t); toast._t = setTimeout(function () { el.classList.add('hidden'); }, 4000);
+    }
+    function loadScript(src) {
+      return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('load ' + src)); }; document.head.appendChild(s); });
+    }
+    var fbReady = null;
+    function loadFirebase() {
+      if (!fbReady) {
+        var base = 'https://www.gstatic.com/firebasejs/' + FB_VER + '/';
+        fbReady = loadScript(base + 'firebase-app-compat.js').then(function () { return loadScript(base + 'firebase-messaging-compat.js'); })
+          .then(function () { if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); return firebase.messaging(); });
+        fbReady.catch(function () { fbReady = null; });
+      }
+      return fbReady;
+    }
+    function getPushToken() {
+      return Promise.all([loadFirebase(), navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; })])
+        .then(function (r) { return r[0].getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: r[1] }); });
+    }
+    // הכתובת של המכשיר עוברת למערכת (שבתוך המסגרת), והיא שומרת אותה לפי המייל של המשתמש/ת
+    function sendTokenToApp(token, force) {
+      if (!token) return;
+      var last = {}; try { last = JSON.parse(lsGet(PUSH_SENT_KEY) || '{}') || {}; } catch (e) {}
+      if (!force && last.t === token && Date.now() - Number(last.ts || 0) < 12 * 3600 * 1000) return;
+      pendingToken = token;
+      if (appWin) { try { appWin.postMessage({ proctcherStore: 1, op: 'pushToken', token: token, platform: platformName() }, appOrigin); } catch (e) {} }
+    }
+    function hideBar() { document.getElementById('pushBar').classList.add('hidden'); }
+    function maybeOfferPush() {
+      if (pushStarted || !pushSupported() || !loggedIn()) return;
+      pushStarted = true;
+      var perm = Notification.permission;
+      if (perm === 'granted') { getPushToken().then(function (t) { sendTokenToApp(t, false); }).catch(function () {}); return; }
+      if (perm !== 'default') return;
+      if (Date.now() - Number(lsGet(PUSH_LATER_KEY) || 0) < 3 * 24 * 3600 * 1000) return;
+      document.getElementById('pushBar').classList.remove('hidden');
+      loadFirebase().catch(function () {}); // טעינה מראש, כדי שהלחיצה תהיה מהירה
+    }
+    document.getElementById('pushOn').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      // באייפון הבקשה חייבת לצאת ישירות מהלחיצה
+      Promise.resolve(Notification.requestPermission()).then(function (perm) {
+        if (perm !== 'granted') { hideBar(); toast('ההתראות לא הופעלו. אפשר להפעיל אותן בהגדרות הטלפון.'); return; }
+        return getPushToken().then(function (t) { hideBar(); sendTokenToApp(t, true); toast('🔔 ההתראות הופעלו'); });
+      }).catch(function () { toast('הפעלת ההתראות נכשלה. נסו שוב מאוחר יותר.'); btn.disabled = false; });
+    });
+    document.getElementById('pushLater').addEventListener('click', function () { lsSet(PUSH_LATER_KEY, String(Date.now())); hideBar(); });
 
     if (!DEPLOY_ID) showError('כתובת המערכת לא הוגדרה. יש לעדכן את APP_URL בקובץ index.html.');
     else if (navigator.onLine === false) showError('אין חיבור לאינטרנט. המערכת תיפתח כשהחיבור יחזור.');
