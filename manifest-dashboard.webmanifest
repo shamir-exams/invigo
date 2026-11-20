@@ -1,7 +1,7 @@
 {
   "id": "./dashboard.html",
-  "name": "Proctcher – לוח בקרה",
-  "short_name": "Proctcher רכזת",
+  "name": "Invigo – לוח בקרה",
+  "short_name": "Invigo רכזת",
   "description": "לוח הבקרה של רכזת הבחינות",
   "lang": "he",
   "dir": "rtl",
@@ -10,7 +10,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#114b3c",
+  "theme_color": "#312e81",
   "icons": [
     {
       "src": "dash-icon-192.png",

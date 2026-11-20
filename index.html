@@ -3,50 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Proctcher</title>
-  <meta name="theme-color" content="#114b3c">
+  <title>Invigo</title>
+  <meta name="theme-color" content="#312e81">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Proctcher">
+  <meta name="apple-mobile-web-app-title" content="Invigo">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
   <style>
-    :root { --green: #114b3c; --muted: #64748b; --bg: #ffffff; }
+    :root { --brand: #312e81; --muted: #64748b; --bg: #ffffff; }
     html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
     #app { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: var(--bg); }
     #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--bg); z-index: 2; transition: opacity 0.25s ease; padding: 24px; text-align: center; }
     #splash.gone { opacity: 0; pointer-events: none; }
-    #splash img { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 6px 22px rgba(17, 75, 60, 0.18); }
-    .name { font-weight: 900; font-size: 22px; color: var(--green); letter-spacing: 0.5px; }
+    #splash img { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 6px 22px rgba(49, 46, 129, 0.18); }
+    .name { font-weight: 900; font-size: 22px; color: var(--brand); letter-spacing: 0.5px; }
     .msg { color: var(--muted); font-weight: 700; font-size: 15px; line-height: 1.6; max-width: 320px; }
-    .spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #d1e7dd; border-top-color: var(--green); animation: s 0.9s linear infinite; }
+    .spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #e0e7ff; border-top-color: var(--brand); animation: s 0.9s linear infinite; }
     @keyframes s { to { transform: rotate(360deg); } }
-    button { font: inherit; font-weight: 800; font-size: 16px; color: #ffffff; background: var(--green); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
+    button { font: inherit; font-weight: 800; font-size: 16px; color: #ffffff; background: var(--brand); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
     .hidden { display: none !important; }
     .foot { position: fixed; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; color: #94a3b8; font-size: 12px; direction: ltr; }
     /* בקשת הפעלת התראות */
-    #pushBar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5; background: #ffffff; border: 2px solid #114b3c; border-radius: 16px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; max-width: 460px; margin: 0 auto; font-family: inherit; }
-    #pushBar .t { font-weight: 900; color: #114b3c; font-size: 16px; }
+    #pushBar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5; background: #ffffff; border: 2px solid #312e81; border-radius: 16px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; max-width: 460px; margin: 0 auto; font-family: inherit; }
+    #pushBar .t { font-weight: 900; color: #312e81; font-size: 16px; }
     #pushBar .s { color: #475569; font-size: 14px; font-weight: 600; line-height: 1.5; }
     #pushBar .row { display: flex; gap: 8px; }
     #pushBar .row button { flex: 1; padding: 11px 10px; font-size: 15px; }
     #pushBar .row .later { background: #f1f5f9; color: #334155; }
-    #pushToast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6; background: #114b3c; color: #ffffff; font-weight: 800; font-size: 14px; border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); max-width: 90%; text-align: center; }
+    #pushToast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 6; background: #312e81; color: #ffffff; font-weight: 800; font-size: 14px; border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); max-width: 90%; text-align: center; }
   </style>
 </head>
 <body>
   <div id="splash">
     <img src="icon-512.png" alt="">
-    <div class="name">PROCTCHER</div>
-    <div id="spin" class="spin"></div>
+        <div id="spin" class="spin"></div>
     <div id="msg" class="msg">טוען את המערכת...</div>
     <button id="retry" class="hidden" type="button">לנסות שוב</button>
     <div class="foot">&copy; 2026 Gali Ben Natan. All rights reserved.</div>
   </div>
-  <iframe id="app" title="Proctcher" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <iframe id="app" title="Invigo" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
   <div id="pushBar" class="hidden" role="dialog" aria-label="הפעלת התראות">
     <div class="t">🔔 התראות מהרכזת</div>
     <div class="s">כדי שהודעות חשובות מהרכזת יופיעו אצלך גם כשהטלפון נעול.</div>

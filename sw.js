@@ -1,6 +1,6 @@
-// Proctcher App: שומר את מעטפת האפליקציה בטלפון כדי שתיפתח מהר.
+// Invigo: שומר את מעטפת האפליקציה בטלפון כדי שתיפתח מהר.
 // המערכת עצמה (Google Apps Script) תמיד נטענת מהרשת ולא נשמרת כאן.
-const CACHE = 'proctcher-shell-v6';
+const CACHE = 'invigo-shell-v7';
 const SHELL = ['./', './index.html', './dashboard.html', './manifest.webmanifest', './manifest-dashboard.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './maskable-512.png', './icon-32.png', './dash-icon-180.png', './dash-icon-192.png', './dash-icon-512.png', './dash-maskable-512.png', './dash-icon-32.png'];
 
 self.addEventListener('install', e => {
@@ -29,7 +29,7 @@ self.addEventListener('push', e => {
   let d = {};
   try { const j = e.data ? e.data.json() : {}; d = j.data || j.notification || j || {}; }
   catch (x) { try { d = { body: e.data ? e.data.text() : '' }; } catch (y) {} }
-  const title = d.title || 'Proctcher';
+  const title = d.title || 'Invigo';
   e.waitUntil(self.registration.showNotification(title, {
     body: d.body || '',
     icon: 'icon-192.png',

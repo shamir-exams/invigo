@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Proctcher – Exam Companion",
-  "short_name": "Proctcher",
+  "name": "Invigo Exams",
+  "short_name": "Invigo",
   "description": "מערכת הבחינות של בית הספר: חדרים, נוכחות, הגשות וצ'אט משגיחים",
   "lang": "he",
   "dir": "rtl",
@@ -10,7 +10,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#114b3c",
+  "theme_color": "#312e81",
   "icons": [
     {
       "src": "icon-192.png",
