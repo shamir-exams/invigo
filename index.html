@@ -16,7 +16,7 @@
     :root { --brand: #312e81; --muted: #64748b; --bg: #ffffff; }
     html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
-    #app { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top, 0px)); border: 0; background: var(--bg); }
+    #app { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; background: var(--bg); }
     #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--bg); z-index: 2; transition: opacity 0.25s ease; padding: 24px; text-align: center; }
     #splash.gone { opacity: 0; pointer-events: none; }
     #splash img { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 6px 22px rgba(49, 46, 129, 0.18); }

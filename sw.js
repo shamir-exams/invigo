@@ -1,6 +1,6 @@
 // Invigo: שומר את מעטפת האפליקציה בטלפון כדי שתיפתח מהר.
 // המערכת עצמה (Google Apps Script) תמיד נטענת מהרשת ולא נשמרת כאן.
-const CACHE = 'invigo-shell-v7';
+const CACHE = 'invigo-shell-v8';
 const SHELL = ['./', './index.html', './dashboard.html', './manifest.webmanifest', './manifest-dashboard.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './maskable-512.png', './icon-32.png', './dash-icon-180.png', './dash-icon-192.png', './dash-icon-512.png', './dash-maskable-512.png', './dash-icon-32.png'];
 
 self.addEventListener('install', e => {
